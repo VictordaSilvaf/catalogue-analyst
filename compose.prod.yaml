@@ -41,6 +41,7 @@ services:
     volumes:
       - laravel-public-assets:/var/www/public/build
       - laravel-storage-production:/var/www/storage
+    command: sh -c "touch /var/www/html/.env && php-fpm"
     env_file:
       - .env
     networks:
