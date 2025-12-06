@@ -13,8 +13,7 @@ services:
       - ofertinhas
       - laravel-production
     depends_on:
-      php-fpm:
-        condition: service_healthy
+        - php-fpm
     labels:
       - "traefik.enable=true"
 
