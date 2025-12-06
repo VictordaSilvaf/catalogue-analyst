@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  dnshopcell:
+    image: virtusilva/dnshopcell:latest   # ← já troquei pro seu usuário correto
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.dnshopcell-http.rule=Host(`dnshopcell.ofertinhas.site`)"
+        - "traefik.http.routers.dnshopcell-http.entrypoints=web"
+        - "traefik.http.routers.dnshopcell-http.middlewares=redirect-https"
+        - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
+
+        - "traefik.http.routers.dnshopcell-https.rule=Host(`dnshopcell.ofertinhas.site`)"
+        - "traefik.http.routers.dnshopcell-https.entrypoints=websecure"
+        - "traefik.http.routers.dnshopcell-https.tls=true"
+        - "traefik.http.routers.dnshopcell-https.tls.certresolver=letsencryptresolver"
+
+        - "traefik.http.services.dnshopcell.loadbalancer.server.port=80"
+    networks:
+      - ofertinhas   # ← rede que já existe
+
+networks:
+  ofertinhas:
+    external: true

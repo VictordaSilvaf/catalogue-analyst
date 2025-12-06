@@ -7,7 +7,7 @@
         "config": "",
         "css": "resources/css/app.css",
         "baseColor": "neutral",
-        "cssVariables": true,
+        "cssVariables": false,
         "prefix": ""
     },
     "aliases": {
@@ -15,7 +15,9 @@
         "utils": "@/lib/utils",
         "ui": "@/components/ui",
         "lib": "@/lib",
-        "hooks": "@/hooks"
+        "hooks": "@/hooks",
+        "types": "@/types",
+        "contexts": "@/contexts"
     },
     "iconLibrary": "lucide"
 }
