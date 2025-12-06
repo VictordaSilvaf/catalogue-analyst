@@ -1,5 +1,5 @@
 # Stage 1: Build environment and Composer dependencies
-FROM php:8.4-cli AS builder
+FROM php:8.4-fpm AS builder
 
 # Install system dependencies and PHP extensions required for Laravel + MySQL/PostgreSQL support
 # Some dependencies are required for PHP extensions only in the build stage
@@ -37,7 +37,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
     && composer install --no-dev --optimize-autoloader --no-interaction --no-progress --prefer-dist
 
 # Stage 2: Production environment
-FROM php:8.4-cli
+FROM php:8.4-fpm
 
 # Install client libraries required for php extensions in runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -54,7 +54,7 @@ COPY --from=builder /usr/local/bin/docker-php-ext-* /usr/local/bin/
 # Use the default production configuration for PHP runtime arguments
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
-RUN touch /var/www/html/.env
+RUN touch /var/www/.env # ⬅️ CORRIGIDO: Caminho correto para a raiz do Laravel
 
 # Copy the application code and dependencies from the build stage
 COPY --from=builder /var/www /var/www
@@ -68,5 +68,4 @@ RUN chown -R www-data:www-data /var/www
 # Switch to the non-privileged user to run the application
 USER www-data
 
-# Default command: Provide a bash shell to allow running any command
-CMD ["bash"]
+# ⚠️ Linha CMD ["bash"] REMOVIDA para usar o CMD padrão (php-fpm) da imagem base
