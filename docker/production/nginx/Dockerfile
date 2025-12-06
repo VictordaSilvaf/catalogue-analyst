@@ -1,20 +1,27 @@
 # Stage 1: Build assets
 FROM debian AS builder
 
-# Install Node.js and build tools
+# Install Node.js and build tools (e.g., nodejs, npm)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     nodejs \
     npm \
+    # 🚨 SOLUÇÃO: Adicionar PHP CLI e ZIP/UNZIP
+    php-cli \
+    php-zip \
+    unzip \
+    # Fim da lista de instalação
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Set working directory
 WORKDIR /var/www
 
 # Copy Laravel application code
-COPY . /var/www
+# 🚨 IMPORTANTE: Se o Wayfinder precisar de todos os arquivos, 
+# certifique-se de copiar o código antes.
+COPY . /var/www 
 
-# Install Node.js dependencies and build assets
+# Instalar Node.js dependências (Wayfinder será executado aqui)
 RUN npm install && npm run build
 
 # Stage 2: Nginx production image
