@@ -1,48 +1,70 @@
-# Stage 1: Build assets
-FROM debian AS builder
+# Stage 1: Build environment and Composer dependencies
+FROM php:8.4-cli AS builder
 
-# Install Node.js and build tools (e.g., nodejs, npm)
+# Install system dependencies and PHP extensions required for Laravel + MySQL/PostgreSQL support
+# Some dependencies are required for PHP extensions only in the build stage
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    nodejs \
-    npm \
-    # 🚨 SOLUÇÃO: Adicionar PHP CLI e ZIP/UNZIP
-    php-cli \
-    php-zip \
     unzip \
-    # Fim da lista de instalação
-    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    libpq-dev \
+    libonig-dev \
+    libssl-dev \
+    libxml2-dev \
+    libcurl4-openssl-dev \
+    libicu-dev \
+    libzip-dev \
+    && docker-php-ext-install -j$(nproc) \
+    pdo_mysql \
+    pdo_pgsql \
+    pgsql \
+    opcache \
+    intl \
+    zip \
+    bcmath \
+    soap \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Set the working directory inside the container
+WORKDIR /var/www
+
+# Copy the entire Laravel application code into the container
+COPY . /var/www
+
+# Install Composer and dependencies
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
+    && composer install --no-dev --optimize-autoloader --no-interaction --no-progress --prefer-dist
+
+# Stage 2: Production environment
+FROM php:8.4-cli
+
+# Install client libraries required for php extensions in runtime
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev \
+    libicu-dev \
+    libzip-dev \
+    && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Copy PHP extensions and libraries from the builder stage
+COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
+COPY --from=builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
+COPY --from=builder /usr/local/bin/docker-php-ext-* /usr/local/bin/
+
+# Use the default production configuration for PHP runtime arguments
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+# Copy the application code and dependencies from the build stage
+COPY --from=builder /var/www /var/www
 
 # Set working directory
 WORKDIR /var/www
 
-# Copy Laravel application code
-# 🚨 IMPORTANTE: Se o Wayfinder precisar de todos os arquivos, 
-# certifique-se de copiar o código antes.
-COPY . /var/www 
+# Ensure correct permissions
+RUN chown -R www-data:www-data /var/www
 
-# Instalar Node.js dependências (Wayfinder será executado aqui)
-RUN npm install && npm run build
+# Switch to the non-privileged user to run the application
+USER www-data
 
-# Stage 2: Nginx production image
-FROM nginx:alpine
-
-# Copy custom Nginx configuration
-# -----------------------------------------------------------
-# Replace the default Nginx configuration with our custom one
-# that is optimized for serving a Laravel application.
-# -----------------------------------------------------------
-COPY ./docker/production/nginx/nginx.conf /etc/nginx/nginx.conf
-
-# Copy Laravel's public assets from the builder stage
-# -----------------------------------------------------------
-# We only need the 'public' directory from our Laravel app.
-# -----------------------------------------------------------
-COPY --from=builder /var/www/public /var/www/public
-
-# Set the working directory to the public folder
-WORKDIR /var/www/public
-
-# Expose port 80 and start Nginx
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Default command: Provide a bash shell to allow running any command
+CMD ["bash"]
