@@ -33,10 +33,7 @@ services:
       - "traefik.http.services.dnshopcell.loadbalancer.server.port=80"
 
   php-fpm:
-    build:
-      context: .
-      dockerfile: ./docker/common/php-fpm/Dockerfile
-      target: production
+    image: php:8.2-fpm
     restart: unless-stopped
     volumes:
       - laravel-public-assets:/var/www/public/build
