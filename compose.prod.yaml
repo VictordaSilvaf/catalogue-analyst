@@ -83,4 +83,4 @@ networks:
 
 volumes:
     laravel-storage-production:
-    mariadb-data-production:
+    mysql-prod-data:
