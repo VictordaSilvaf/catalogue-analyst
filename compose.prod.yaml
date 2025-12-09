@@ -32,8 +32,7 @@ services:
             timeout: 5s
             retries: 3
         depends_on:
-            mariadb:
-                condition: service_healthy
+            - mysql
 
     php-cli:
         build:
