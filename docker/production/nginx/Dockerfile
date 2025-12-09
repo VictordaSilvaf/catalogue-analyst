@@ -1,6 +1,6 @@
 # docker/nginx/Dockerfile
 # Stage 1: Build assets
-FROM debian AS builder
+FROM php:8.4-fpm AS builder
 
 # Install Node.js and build tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
