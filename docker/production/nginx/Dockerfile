@@ -1,4 +1,3 @@
-# docker/nginx/Dockerfile
 # Stage 1: Build assets
 FROM php:8.4-fpm AS builder
 
