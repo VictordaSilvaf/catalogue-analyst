@@ -46,26 +46,31 @@ services:
         networks:
             - laravel-production
 
-    mariadb:
-        image: mariadb:11
-        restart: unless-stopped
+    mysql:
+        image: 'mysql:8.4'
         ports:
-            - '${DB_PORT:-3306}:3306'
+            - '${FORWARD_DB_PORT:-3306}:3306'
         environment:
+            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_ROOT_HOST: '%'
             MYSQL_DATABASE: '${DB_DATABASE}'
             MYSQL_USER: '${DB_USERNAME}'
             MYSQL_PASSWORD: '${DB_PASSWORD}'
-            MYSQL_ROOT_PASSWORD: '${DB_ROOT_PASSWORD:-rootpass}'
+            MYSQL_ALLOW_EMPTY_PASSWORD: 1
+            MYSQL_EXTRA_OPTIONS: '${MYSQL_EXTRA_OPTIONS:-}'
         volumes:
-            - mariadb-data-production:/var/lib/mysql
+            - 'sail-mysql:/var/lib/mysql'
+            - './vendor/laravel/sail/database/mysql/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh'
         networks:
-            - laravel-production
+            - sail
         healthcheck:
-            test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 --silent']
-            interval: 10s
+            test:
+                - CMD
+                - mysqladmin
+                - ping
+                - '-p${DB_PASSWORD}'
+            retries: 3
             timeout: 5s
-            retries: 5
-            start_period: 15s
 
     redis:
         image: redis:alpine
